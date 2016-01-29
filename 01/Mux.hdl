@@ -16,6 +16,6 @@ CHIP Mux {
     PARTS:
     Not(in=sel, out=Selnot);
     And(a=a, b=Selnot, out=AandSelnot);
-    And(a=b, b=sel, out=AandSel);
-    Or(a=AandSelnot, b=AandSel, out=out);
+    And(a=b, b=sel, out=BandSel);
+    Or(a=AandSelnot, b=BandSel, out=out);
 }
