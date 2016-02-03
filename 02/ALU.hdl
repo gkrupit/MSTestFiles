@@ -57,9 +57,10 @@ CHIP ALU {
     Add16(a=x2, b=y2, out=x2ory2);
     Mux16(a=x2andy2, b=x2ory2, sel=f, out=x3andory3);
 
-    // no (out = !out), zr, ng
+    // negate output
     Not16(in=x3andory3, out=notx3andory3);
     Mux16(a=x3andory3, b=notx3andory3, sel=no, out=out, out[0..7]=zra, out[8..15]=zrb, out[15]=ng);
+    // determine if output is zero
     Or8Way(in=zra, out=zra2);
     Or8Way(in=zrb, out=zrb2);
     Or(a=zra2, b=zrb2, out=zror);
