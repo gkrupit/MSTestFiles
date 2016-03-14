@@ -133,6 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('asm', help='asm file')
     args = parser.parse_args()
 
+    outfile = args.asm[:-3] + 'hack'
     lines = []
     with open(args.asm) as handle:
         """ strips whitespace, ignores comments """
@@ -142,6 +143,6 @@ if __name__ == '__main__':
     lines = define_variables(lines)
     lines = translate(lines)
 
-    with open('out.hack', 'w') as out:
+    with open(outfile, 'w') as out:
         for line in lines:
             out.write(line + '\n')
