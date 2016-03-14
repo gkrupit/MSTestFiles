@@ -39,5 +39,35 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Mux16 to choose between ALU output (aluOut) and instruction
+    // load is opcode to see if C or A instruction
+    Mux16(a=instruction, b=aluOut, sel=instruction[15], out=inAregister);
+
+    // A register: load if A instruction OR d1
+    Not(in=instruction[15], out=notA);
+    Or(a=notA, b=instruction[5], out=loadA);
+    ARegister(in=inAregister, load=loadA, out=aRegister, out[0..14]=addressM);
+
+    // D register: load if C instruction AND d2
+    And(a=instruction[15], b=instruction[4], out=loadD);
+    DRegister(in=aluOut, load=loadD, out=dRegister);
+
+    // Mux16 to choose between value of A register or value of selected memory register
+    Mux16(a=aRegister, b=inM, sel=instruction[12], out=aOrm);
+
+    // ALU
+    ALU(x=dRegister, y=aOrm, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=outM, out=aluOut, zr=zrout, ng=ngout);
+
+    // set writeM to 1 if C instruction AND d3
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // see Jump.hdl
+    Jump(zero=zrout, negative=ngout, jumpBits=instruction[0..2], out=jump);
+
+    // make sure it's a C instruction in order to jump
+    And(a=instruction[15], b=jump, out=load);
+
+    // PC: increment A, load A, or reset pc to first A instruction
+    // set inc to true to act as a catch all (will increment if nothing else)
+    PC(in=aRegister, load=load, inc=true, reset=reset, out[0..14]=pc);
 }

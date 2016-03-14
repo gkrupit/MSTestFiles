@@ -1,0 +1,40 @@
+CHIP Jump {
+
+    IN zero,         // out == 0
+       negative,     // out < 0
+       jumpBits[3];  // j3, j2, j1
+
+    // There are trends in the jump codes:
+    // j1 is associated with "greater than"
+    // 001 if out >  0 jump
+    // 011 if out >= 0 jump
+
+    // j2 is associated with "equals"
+    // 010 if out == 0 jump
+
+    // j3 is associated with "less than"
+    // 100 if out <  0 jump
+    // 110 if out <= 0 jump
+    // 101 if out != 0 jump
+
+    // 111 jump (unconditional)
+    // 000 do not jump
+
+    OUT out;
+
+    PARTS:
+    // check if out == 0 or out < 0
+    Or(a=zero, b=negative, out=lessOrequal);
+
+    // else, out > 0
+    Not(in=lessOrequal, out=positive);
+
+    // look at correlation between jump code trend and output status
+    And(a=jumpBits[0], b=positive,  out=a);
+    And(a=jumpBits[1], b=zero, out=b);
+    And(a=jumpBits[2], b=negative,  out=c);
+
+    // if any of these correlations are true, set jump = 1
+    Or(a=a, b=b, out=aOrb);
+    Or(a=aOrb, b=c, out=out);
+}

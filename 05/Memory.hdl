@@ -26,6 +26,22 @@ CHIP Memory {
     IN in[16], load, address[15];
     OUT out[16];
 
+    // for RAM, address[13..14] will be 00 or 01
+    // for Screen, address[13..14] will be 10
+    // for Keyboard, address[13..14] will be 11
+
     PARTS:
-    // Put your code here:
+    // Determine location based on address[13..14]
+    DMux4Way(in=load, sel=address[13..14], a=RAM, b=RAM2, c=loadScreen, d=keyboard);
+
+    // sel==00 and sel==01 both yield a RAM address, so consolidate
+    Or(a=RAM, b=RAM2, out=loadRAM);
+
+    RAM16K(in=in, load=loadRAM, address=address[0..13], out=outRAM);
+    Screen(in=in, load=loadScreen, address=address[0..12], out=outScreen);
+    Keyboard(out=outKeyboard);
+
+    // output correct address based on address[13..14]
+    // remember 00 and 01 indicate RAM use, so make a and b outRAM
+    Mux4Way16(a=outRAM, b=outRAM, c=outScreen, d=outKeyboard, sel=address[13..14], out=out);
 }
