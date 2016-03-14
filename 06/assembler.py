@@ -40,8 +40,8 @@ comp_a1 = {
     'M+1' : '110111',
     'M-1' : '110010',
     'D+M' : '000010',
-    'D-M' :'010011',
-    'M-D' :'000111',
+    'D-M' : '010011',
+    'M-D' : '000111',
     'D&M' : '000000',
     'D|M' : '010101',
 }
@@ -56,8 +56,8 @@ dest = {
     'A': '100', 'AM': '101', 'AD': '110', 'AMD': '111',
 }
 
-def first_pass(lines):
-    """ converts all symbols to numbers """
+def remove_symbols(lines):
+    """ converts all symbols to decimal numbers """
 
     for i, line in enumerate(lines):
         patterns = re.compile(r'(?<=\@)([a-zA-Z]+)|(?<=\()([a-zA-Z]+)').search(line) # @Word or (WORD)
@@ -70,15 +70,44 @@ def first_pass(lines):
 
     return lines
 
+def c_instruction(line):
+    """ builds C instruction based on predefined dictionaries """
+
+    instr = '111'    # C instructions always start with 111
+    a = ''
+    comp = ''
+    dst = '000'
+    jmp = '000'
+
+    if ';' in line:
+        spl = line.split(';')
+        jmp = jump[spl[1]]
+        line = spl[0]
+
+    if '=' in line:
+        comp_dest = line.split('=')
+        dst = dest[comp_dest[0]]
+        line = comp_dest[1]
+
+    if line in comp_a0:
+        comp = comp_a0[line]
+        a = '0'
+    else:
+        comp = comp_a1[line]
+        a = '1'
+
+    instr = instr + a + comp + dst + jmp
+    return instr
+
 def translate(lines):
-    """ translates each line to binary """
+    """ translates each line to 16-bit binary string """
 
     for i, line in enumerate(lines):
         if line.startswith("@"):    # handles A instructions
             lines[i] = '0' + '{0:015b}'.format(int(line.strip("@")))
+        else:                       # handles C instructions
+            lines[i] = c_instruction(line)
 
-    # if no @, it is a C instruction
-    # if C instruction, parse according to predefined dictionaries
     return lines
 
 if __name__ == '__main__':
@@ -91,4 +120,9 @@ if __name__ == '__main__':
         """ strips whitespace, ignores comments """
         lines = [line.split("//")[0].strip() for line in handle if line.split("//")[0].strip()]
 
-    binary = translate(lines)
+    lines = remove_symbols(lines)
+    lines = translate(lines)
+
+    with open('out.hack', 'w') as out:
+        for line in lines:
+            out.write(line + '\n')
