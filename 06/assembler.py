@@ -56,17 +56,35 @@ dest = {
     'A': '100', 'AM': '101', 'AD': '110', 'AMD': '111',
 }
 
-def remove_symbols(lines):
-    """ converts all symbols to decimal numbers """
+def remove_labels(lines):
+    """ removes all label symbols """
 
+    labels_removed = []
+    line_num = 0    # keep track of instruction number. ignore if a label symbol
     for i, line in enumerate(lines):
-        patterns = re.compile(r'(?<=\@)([a-zA-Z]+)|(?<=\()([a-zA-Z]+)').search(line) # @Word or (WORD)
+        patterns = re.search(r'\((\w+)\)', line)    # (WORD)
         if patterns:
-            if patterns.group() in symbols:         # convert symbol if it already exists
-                lines[i] = "@%s" % symbols[patterns.group()]
+            if patterns.group(1) not in symbols:
+                symbols[patterns.group(1)] = str(line_num)
+        else:
+            labels_removed.append(line)
+            line_num += 1
+
+    return labels_removed
+
+def define_variables(lines):
+    """ defines all variables by converting to addresses """
+
+    var_address = 16    # start defining variables at address 16
+    for i, line in enumerate(lines):
+        patterns = re.search(r'(?<=\@)(\w+)', line)    # @Word
+        if patterns:
+            if patterns.group(1) not in symbols:
+                symbols[patterns.group(1)] = str(var_address)
+                lines[i] = "@%s" % symbols[patterns.group(1)]
+                var_address += 1
             else:
-                symbols[patterns.group()] = str(i)  # else, add to dictionary and conver
-                lines[i] = "@%s" % symbols[patterns.group()]
+                lines[i] = "@%s" % symbols[patterns.group(1)]
 
     return lines
 
@@ -120,7 +138,8 @@ if __name__ == '__main__':
         """ strips whitespace, ignores comments """
         lines = [line.split("//")[0].strip() for line in handle if line.split("//")[0].strip()]
 
-    lines = remove_symbols(lines)
+    lines = remove_labels(lines)
+    lines = define_variables(lines)
     lines = translate(lines)
 
     with open('out.hack', 'w') as out:
