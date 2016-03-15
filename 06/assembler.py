@@ -62,7 +62,7 @@ def remove_labels(lines):
     labels_removed = []
     line_num = 0    # keep track of instruction number. ignore if a label symbol
     for i, line in enumerate(lines):
-        patterns = re.search(r'\((\w+)\)', line)    # (WORD)
+        patterns = re.search(r'\((\S+)\)', line)    # (WORD)
         if patterns:
             if patterns.group(1) not in symbols:
                 symbols[patterns.group(1)] = str(line_num)
@@ -77,14 +77,13 @@ def define_variables(lines):
 
     var_address = 16    # start defining variables at address 16
     for i, line in enumerate(lines):
-        patterns = re.search(r'(?<=\@)(\w+)', line)    # @Word
-        if patterns:
-            if patterns.group(1) not in symbols:
-                symbols[patterns.group(1)] = str(var_address)
-                lines[i] = "@%s" % symbols[patterns.group(1)]
+        if line.startswith("@") and not line.strip("@").isdigit():
+            if line.strip('@') not in symbols:
+                symbols[line.strip('@')] = str(var_address)
+                lines[i] = "@%s" % symbols[line.strip('@')]
                 var_address += 1
             else:
-                lines[i] = "@%s" % symbols[patterns.group(1)]
+                lines[i] = "@%s" % symbols[line.strip('@')]
 
     return lines
 
