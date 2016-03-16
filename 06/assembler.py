@@ -90,7 +90,6 @@ def define_variables(lines):
 def c_instruction(line):
     """ builds C instruction based on predefined dictionaries """
 
-    instr = '111'    # C instructions always start with 111
     a = ''
     comp = ''
     dst = '000'
@@ -113,19 +112,19 @@ def c_instruction(line):
         comp = comp_a1[line]
         a = '1'
 
-    instr = instr + a + comp + dst + jmp
-    return instr
+    return '111' + a + comp + dst + jmp    # C instructions always start with 111
 
 def translate(lines):
     """ translates each line to 16-bit binary string """
 
+    instructions = []
     for i, line in enumerate(lines):
         if line.startswith("@"):    # handles A instructions
-            lines[i] = '0' + '{0:015b}'.format(int(line.strip("@")))
+            instructions.append('0{0:015b}'.format(int(line.strip("@"))))
         else:                       # handles C instructions
-            lines[i] = c_instruction(line)
+            instructions.append(c_instruction(line))
 
-    return lines
+    return instructions
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Hack Assembler')
