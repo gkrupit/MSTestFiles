@@ -2,6 +2,14 @@
 import argparse
 import re
 
+"""
+    *** HOW TO RUN ***
+    To run, type: python assembler.py name_of_asm.asm
+
+    The program will output a .hack file in the current directory
+    with the same name as the name of the .asm file given as an argument
+"""
+
 symbols = {
     'R0': '0', 'R1': '1', 'R2': '2',
     'R3': '3', 'R4': '4', 'R5': '5',
