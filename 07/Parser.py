@@ -36,19 +36,47 @@ class Parser(object):
     def arg2(self):
         return self.current_command.split()[1]
 
+class CodeWriter(object):
+
+    def __init__(self, directory):
+        self.directory = directory
+        self.outfile = open(directory + 'out.asm', 'w')
+
+    def __repr__(self):
+        return self.directory
+
+    def setFileName(self, filename):
+        self.filename = filename.split('/')[-1][:-3]
+
+    def writeArithmetic(self, command):
+        pass
+
+    def writePushPop(self):
+        pass
+
+    def close(self):
+        self.outfile.close()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='VM Translator')
     parser.add_argument('vm', help='vm file or directory')
     args = parser.parse_args()
 
     files = []
+    directory = ""
     if args.vm.endswith('/'):    # get all .vm files if directory is specified
         files = [args.vm + f for f in os.listdir(args.vm) if f.endswith('.vm')]
+        directory = args.vm
+    elif '/' not in args.vm:
+        files.append(args.vm)
+        directory = ''
     else:
         files.append(args.vm)
+        directory = args.vm.rsplit('/',1)[0]+'/'
 
+    cw = CodeWriter(directory)
     for f in files:
         p = Parser(f)
+        cw.setFileName(f)
         while p.hasMoreCommands():
             p.advance()
-            print p.commandType()
