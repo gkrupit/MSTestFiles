@@ -31,28 +31,47 @@ class Parser(object):
         if self.commandType() == 'C_ARITHMETIC':
             return self.current_command
         else:
-            return self.current_command.split()[0]
+            return self.current_command.split()[1]
 
     def arg2(self):
-        return self.current_command.split()[1]
+        """ returns second argument of command """
+        return self.current_command.split()[2]
 
 class CodeWriter(object):
 
     def __init__(self, directory):
-        self.directory = directory
-        self.outfile = open(directory + 'out.asm', 'w')
-
-    def __repr__(self):
-        return self.directory
+        self.outfile = open(os.path.join(directory, 'out.asm'), 'w')
+        self.startFile()
 
     def setFileName(self, filename):
-        self.filename = filename.split('/')[-1][:-3]
+        self.filename = os.path.basename(filename)[:-3]
+
+    def startFile(self):
+        """ initializes stack pointer """
+        self.outfile.write('@256\n')
+        self.outfile.write('D=A\n')
+        self.outfile.write('@SP\n')
+        self.outfile.write('M=D\n')
+
+    def incrementSP(self):
+        """ increments SP """
+        self.outfile.write('@SP\n')
+        self.outfile.write('M=M+1\n')
+
+    def decrementSP(self):
+        """ decrements SP """
+        self.outfile.write('@SP\n')
+        self.outfile.write('M=M-1\n')
 
     def writeArithmetic(self, command):
         pass
 
-    def writePushPop(self):
-        pass
+    def writePushPop(self, command, segment, index):
+        if command == 'push':
+            pass
+        else:
+            pass
+
 
     def close(self):
         self.outfile.close()
@@ -64,15 +83,12 @@ if __name__ == '__main__':
 
     files = []
     directory = ""
-    if args.vm.endswith('/'):    # get all .vm files if directory is specified
-        files = [args.vm + f for f in os.listdir(args.vm) if f.endswith('.vm')]
+    if os.path.isdir(args.vm):    # if directory, get all .vm files
         directory = args.vm
-    elif '/' not in args.vm:
+        files = [os.path.join(directory, f) for f in os.listdir(args.vm) if f.endswith('.vm')]
+    else:    # if not directory, append file name
+        directory = os.path.dirname(args.vm)
         files.append(args.vm)
-        directory = ''
-    else:
-        files.append(args.vm)
-        directory = args.vm.rsplit('/',1)[0]+'/'
 
     cw = CodeWriter(directory)
     for f in files:
@@ -80,3 +96,11 @@ if __name__ == '__main__':
         cw.setFileName(f)
         while p.hasMoreCommands():
             p.advance()
+            if p.commandType() == 'C_ARITHMETIC':
+                cw.writeArithmetic(p.arg1())
+            elif p.commandType() == 'C_PUSH':
+                cw.writePushPop('push', p.arg1(), p.arg2())
+            elif p.commandType() == 'C_POP':
+                cw.writePushPop('pop', p.arg1(), p.arg2())
+
+    cw.close()
