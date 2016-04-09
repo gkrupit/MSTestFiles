@@ -39,6 +39,8 @@ class Parser(object):
 
 class CodeWriter(object):
     mem_segment = {'local': 'LCL', 'argument': 'ARG', 'this': 'THIS', 'that': 'THAT', 'pointer': 3, 'temp': 5}
+    operations = {'add': '+', 'sub': '-', 'and': '&', 'or': '|', 'neg': '-',
+                  'not': '!', 'eq': 'EQ', 'lt': 'LT', 'gt': 'GT'}
     nums = []
 
     def __init__(self, directory):
@@ -73,7 +75,8 @@ class CodeWriter(object):
         """ decrements SP """
         self.write([
             '@SP',
-            'M=M-1'
+            'M=M-1',
+            'A=M'
         ])
 
     def DtoSP(self):
@@ -85,7 +88,38 @@ class CodeWriter(object):
         ])
 
     def writeArithmetic(self, command):
-        pass
+        if command in ('add', 'sub', 'and', 'or'):
+            self.decrementSP()
+            self.write([
+                'D=M'
+            ])
+            self.decrementSP()
+            self.write([
+                'D=D%sM' %self.operations[command],
+                'M=D'
+            ])
+        elif command in ('neg', 'not'):
+            self.decrementSP()
+            self.write([
+                'D=M',
+                'D=%sD' %self.operations[command]
+            ])
+        elif command in ('eq', 'gt', 'lt'): # needs to change soon
+            self.decrementSP()
+            self.decrementSP()
+            a = self.num[-2]
+            b = self.num[-1]
+            val = 0
+            if(command == 'eq' and a == b):
+                val = -1
+            elif (command == 'gt' and a > b):
+                val = -1
+            elif (command == 'lt' and a < b):
+                val = -1
+            self.write([
+                'M=%s' %val
+            ])
+        self.incrementSP()
 
     def writePushPop(self, command, segment, index):
         if command == 'push':
@@ -115,14 +149,35 @@ class CodeWriter(object):
                 ])
             self.DtoSP()
             self.incrementSP()
-
         else:
-            if segment in ('temp','pointer'):
-                pass
-            elif segment == 'static':
-                pass
+            if segment in ('temp','pointer','static'):
+                write_index = ''
+                if segment == 'static':
+                    write_index = self.fileName + '.' + index
+                else:
+                    write_index = self.mem_segment[segment] + int(index)
+                self.write([
+                    '@%d' %write_index,
+                    'D=A',
+                    '@13',
+                    'M=D'
+                ])
             else:
-                pass
+                self.write([
+                    '@%s' %self.mem_segment[segment],
+                    'D=M',
+                    '@%s' %index,
+                    'D=D+A',
+                    '@13',
+                    'M=D'
+                ])
+            self.decrementSP()
+            self.write([
+                'D=M',
+                '@13',
+                'A=M',
+                'M=D'
+            ])
 
     def close(self):
         self.write(['@%s' %(1+self.lineCount), '0;JMP']) # infinite loop
