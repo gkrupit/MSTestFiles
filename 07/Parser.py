@@ -102,7 +102,9 @@ class CodeWriter(object):
                 pass
 
         else:
-            pass
+            if segment in ('temp','pointer'):
+                pass
+
 
 
     def close(self):
