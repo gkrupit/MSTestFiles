@@ -41,39 +41,66 @@ class CodeWriter(object):
 
     def __init__(self, directory):
         self.outfile = open(os.path.join(directory, 'out.asm'), 'w')
+        self.lineCount = 0
         self.startFile()
 
     def setFileName(self, filename):
         self.filename = os.path.basename(filename)[:-3]
 
+    def write(self, arr):
+        self.lineCount += len(arr)
+        self.outfile.write('\n'.join(arr) + '\n')
+
     def startFile(self):
         """ initializes stack pointer """
-        self.outfile.write('@256\n')
-        self.outfile.write('D=A\n')
-        self.outfile.write('@SP\n')
-        self.outfile.write('M=D\n')
+        self.write([
+            '@256',
+            'D=A',
+            '@SP',
+            'M=D'
+        ])
 
     def incrementSP(self):
         """ increments SP """
-        self.outfile.write('@SP\n')
-        self.outfile.write('M=M+1\n')
+        self.write([
+            '@SP',
+            'M=M+1'
+        ])
 
     def decrementSP(self):
         """ decrements SP """
-        self.outfile.write('@SP\n')
-        self.outfile.write('M=M-1\n')
+        self.write([
+            '@SP',
+            'M=M-1'
+        ])
+
+    def DtoSP(self):
+        """ puts contents of D register where SP is pointing """
+        self.write([
+            '@SP',
+            'A=M',
+            'M=D'
+        ])
 
     def writeArithmetic(self, command):
         pass
 
     def writePushPop(self, command, segment, index):
         if command == 'push':
-            pass
+            if segment == 'constant':
+                self.write([
+                    '@%s' %index,
+                    'D=A'
+                ])
+                self.DtoSP()
+                self.incrementSP()
+
         else:
             pass
 
 
     def close(self):
+        self.write(['@%s' %(1+self.lineCount), '0;JMP']) # infinite loop
         self.outfile.close()
 
 if __name__ == '__main__':
