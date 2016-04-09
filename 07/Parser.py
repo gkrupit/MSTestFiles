@@ -94,6 +94,12 @@ class CodeWriter(object):
                 ])
                 self.DtoSP()
                 self.incrementSP()
+            elif segment in ('temp','pointer'):
+                pass
+            elif segment == 'static':
+                pass
+            else:
+                pass
 
         else:
             pass
