@@ -38,6 +38,8 @@ class Parser(object):
         return self.current_command.split()[2]
 
 class CodeWriter(object):
+    mem_segment = {'local': 'LCL', 'argument': 'ARG', 'this': 'THIS', 'that': 'THAT', 'pointer': 3, 'temp': 5}
+    nums = []
 
     def __init__(self, directory):
         self.outfile = open(os.path.join(directory, 'out.asm'), 'w')
@@ -92,20 +94,35 @@ class CodeWriter(object):
                     '@%s' %index,
                     'D=A'
                 ])
-                self.DtoSP()
-                self.incrementSP()
+                self.nums.append(int(index))
             elif segment in ('temp','pointer'):
+                self.write([
+                    '@%d' %(self.mem_segment[segment] + int(index)),
+                    'D=M'
+                ])
+            elif segment == 'static':
+                self.write([
+                    '@%s' %(self.fileName + '.' + index),
+                    'D=M'
+                ])
+            else:
+                self.write([
+                    '@%s' %self.mem_segment[segment],
+                    'D=M',
+                    '@%s' %index,
+                    'A=D+A',
+                    'D=M'
+                ])
+            self.DtoSP()
+            self.incrementSP()
+
+        else:
+            if segment in ('temp','pointer'):
                 pass
             elif segment == 'static':
                 pass
             else:
                 pass
-
-        else:
-            if segment in ('temp','pointer'):
-                pass
-
-
 
     def close(self):
         self.write(['@%s' %(1+self.lineCount), '0;JMP']) # infinite loop
