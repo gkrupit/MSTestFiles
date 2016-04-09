@@ -43,13 +43,13 @@ class CodeWriter(object):
                   'not': '!', 'eq': 'EQ', 'lt': 'LT', 'gt': 'GT'}
     nums = []
 
-    def __init__(self, directory):
-        self.outfile = open(os.path.join(directory, 'out.asm'), 'w')
+    def __init__(self, directory, filename):
+        self.outfile = open(os.path.join(directory, filename), 'w')
         self.lineCount = 0
         self.startFile()
 
     def setFileName(self, filename):
-        self.filename = os.path.basename(filename)[:-3]
+        self.fileName = os.path.basename(filename)[:-3]
 
     def write(self, arr):
         self.lineCount += len(arr)
@@ -95,20 +95,21 @@ class CodeWriter(object):
             ])
             self.decrementSP()
             self.write([
-                'D=D%sM' %self.operations[command],
+                'D=M%sD' %self.operations[command],
                 'M=D'
             ])
         elif command in ('neg', 'not'):
             self.decrementSP()
             self.write([
                 'D=M',
-                'D=%sD' %self.operations[command]
+                'D=%sD' %self.operations[command],
+                'M=D'
             ])
         elif command in ('eq', 'gt', 'lt'): # needs to change soon
             self.decrementSP()
             self.decrementSP()
-            a = self.num[-2]
-            b = self.num[-1]
+            a = self.nums[-2]
+            b = self.nums[-1]
             val = 0
             if(command == 'eq' and a == b):
                 val = -1
@@ -157,7 +158,7 @@ class CodeWriter(object):
                 else:
                     write_index = self.mem_segment[segment] + int(index)
                 self.write([
-                    '@%d' %write_index,
+                    '@%s' %write_index,
                     'D=A',
                     '@13',
                     'M=D'
@@ -192,12 +193,14 @@ if __name__ == '__main__':
     directory = ""
     if os.path.isdir(args.vm):    # if directory, get all .vm files
         directory = args.vm
+        outfile = os.path.realpath(directory).split('/')[-1] + '.asm'
         files = [os.path.join(directory, f) for f in os.listdir(args.vm) if f.endswith('.vm')]
     else:    # if not directory, append file name
         directory = os.path.dirname(args.vm)
+        outfile = args.vm.split('/')[-1][:-3] + '.asm'
         files.append(args.vm)
 
-    cw = CodeWriter(directory)
+    cw = CodeWriter(directory, outfile)
     for f in files:
         p = Parser(f)
         cw.setFileName(f)
