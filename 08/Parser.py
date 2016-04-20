@@ -42,7 +42,7 @@ class CodeWriter(object):
     operations = {'add': '+', 'sub': '-', 'and': '&', 'or': '|', 'neg': '-',
                   'not': '!', 'eq': 'EQ', 'lt': 'LT', 'gt': 'GT'}
     nums = []
-	labelnum = 1
+    labelnum = 1
 
     def __init__(self, directory, filename):
         self.outfile = open(os.path.join(directory, filename), 'w')
@@ -64,6 +64,7 @@ class CodeWriter(object):
             '@SP',
             'M=D'
         ])
+        self.writeCall('Sys.init', 0)
 
     def incrementSP(self):
         """ increments SP """
@@ -88,92 +89,80 @@ class CodeWriter(object):
             'M=D'
         ])
 
-	def writeLabel(self, label):
-		"""  just makes a label marker  """
-		self.write([
-			'(%s)' %label
-		])
+    def writeLabel(self, label):
+        """  just makes a label marker  """
+        self.write([
+            '(%s)' %label
+        ])
 
-	def writeGoTo(self, label):
-		"""  unconditoinal jumping to a specified label  """
-		self.write([
-			'@%s' %label,
-			'0;JMP'
-		])
+    def writeGoTo(self, label):
+        """  unconditional jumping to a specified label  """
+        self.write([
+            '@%s' %label,
+            '0;JMP'
+        ])
 
-	def writeIf(self, label):
-		"""  if the statement isn't 0 it will jump to a label  """
-		self.decrementSP()
-		self.write([
-			'D=M',
-			'@%s' %label,
-			'D;JNE'
-		])
+    def writeIf(self, label):
+        """  if the statement isn't 0 it will jump to a label  """
+        self.decrementSP()
+        self.write([
+            'D=M',
+            '@%s' %label,
+            'D;JNE'
+        ])
 
-	def writeCall(self, funcName, numArgs)
-		"""  Calling a function  """
-		offset = int(numArgs) + 5		# how many args will it be taking? (needs at least 5)
-		returnLabel = 'return%s%d' %(funcName, labelnum)	#creates unique return label
-		labelnum += 1
-		# sets up return label
-		self.write([
-			'@%s' %returnLabel,
-			'D=A',
-			'@SP'
-			'A=M'
-			'D=M'
-		])
-		self.incrementSP()
-		# sets up the base addresses of the segments
-		for segment in ('LCL', 'ARG', 'THIS', 'THAT'):
-			self.write([
-				'@%s' %segment,
-				'D=M',
-				'@SP',
-				'A=M'
-				'M=D'
-			])
-		self.write([		# moves ARG and LCL to accomidate the offset
-			'@SP',
-			'D=M',
-			'@%d' %offset,
-			'D=D-A',
-			'@ARG',
-			'M=D',
-			'@SP',
-			'D=M',
-			'@LCL',
-			'M=D'
-		])
-		self.writeGoTo(funcName)
-		self.writeLabel(returnLabel)
+    def writeCall(self, funcName, numArgs):
+        """  Calling a function  """
+        offset = int(numArgs) + 5    # how many args will it be taking? (needs at least 5)
+        returnLabel = 'return%s%d' %(funcName, self.labelnum)    #creates unique return label
+        self.labelnum += 1
+        # sets up return label
+        self.write([
+            '@%s' %returnLabel,
+            'D=A',
+            '@SP'
+            'A=M'
+            'D=M'
+        ])
+        self.incrementSP()
+        # sets up the base addresses of the segments
+        for segment in ('LCL', 'ARG', 'THIS', 'THAT'):
+            self.write([
+                '@%s' %segment,
+                'D=M',
+                '@SP',
+                'A=M'
+                'M=D'
+            ])
+        self.write([   #moves ARG and LCL to accomidate the offset
+            '@SP',
+            'D=M',
+            '@%d' %offset,
+            'D=D-A',
+            '@ARG',
+            'M=D',
+            '@SP',
+            'D=M',
+            '@LCL',
+            'M=D'
+        ])
+        self.writeGoTo(funcName)
+        self.writeLabel(returnLabel)
 
-	def writeReturn(self)	# super long....
-		pass
+    def writeReturn(self): # super long....
+        pass
 
-	def writeFunction(self, funcName, nums)
-		self.writeLabel(funcName)
-		# set initial variables to 0
-		for _ in range(int(nums)):
-			self.write([
-				'@0',
-				'D=A',
-				'@SP',
-				'A=M',
-				'M=D'
-			])
-
-
-	def writeInit(self)
-		# setting at the stack pointer
-		self.write([
-			'@256',
-			'D=A',
-			'@SP',
-			'M=D'
-		])
-		# call sys.init
-		self.writeCall('Sys.init',0)
+    def writeFunction(self, funcName, nums):
+        self.writeLabel(funcName)
+        # set initial variables to 0
+        for _ in range(int(nums)):
+            self.write([
+                '@0',
+                'D=A',
+                '@SP',
+                'A=M',
+                'M=D'
+            ])
 
     def writeArithmetic(self, command):
         if command in ('add', 'sub', 'and', 'or'):
@@ -193,49 +182,49 @@ class CodeWriter(object):
                 'D=%sD' %self.operations[command],
                 'M=D'
             ])
-		# we need to create unique labels for each label.
-		# if true execute to one label
-		# if false execute to another label
+        # we need to create unique labels for each label.
+        # if true execute to one label
+        # if false execute to another label
         elif command in ('eq', 'gt', 'lt'):
-            true = 'TruthLabel%s' %labelnum
-			false = 'FalseLabel%s' %labelnum
-			labelnum += 1
-			self.decramentSP()
-			self.write([
-				'D=M'
-			])
-			self.decrementSP()
-			# A > D => D > 0
-			# A < D => D < 0
-			# A = D => D = 0
-			self.write([
-				'A=M',
-				'D=A-M',
-				'@%s' %true,
-				'D;%s' %self.operations[command],
-				'@SP',
-				'A=M',
-				'M=0',
-			])
-			self.incrementSP()
-			# stores 0 for false
-			self.write([
-				'@%s' %skip,
-				'0;JMP'
-			])
-			# create the command for the truth value (-1) to be stored
-			self.write([
-				'(%s)'%true,
-				'@SP',
-				'A=M',
-				'M=-1',
-			])
-			self.incrementSP()
-			# skips the saving the truth value being stored
-			# continues reading the vm
-			self.write([
-				'(%s)' %skip
-			])
+            true = 'TruthLabel%s' %self.labelnum
+            false = 'FalseLabel%s' %self.labelnum
+            self.labelnum += 1
+            self.decrementSP()
+            self.write([
+                'D=M'
+            ])
+            self.decrementSP()
+            # A > D => D > 0
+            # A < D => D < 0
+            # A = D => D = 0
+            self.write([
+                'A=M',
+                'D=A-M',
+                '@%s' %true,
+                'D;%s' %self.operations[command],
+                '@SP',
+                'A=M',
+                'M=0',
+            ])
+            self.incrementSP()
+            # stores 0 for false
+            self.write([
+                '@%s' %false,
+                '0;JMP'
+            ])
+            # create the command for the truth value (-1) to be stored
+            self.write([
+                '(%s)'%true,
+                '@SP',
+                'A=M',
+                'M=-1',
+            ])
+            self.incrementSP()
+            # skips the saving the truth value being stored
+            # continues reading the vm
+            self.write([
+                '(%s)' %false
+            ])
 
     def writePushPop(self, command, segment, index):
         if command == 'push':
@@ -327,16 +316,16 @@ if __name__ == '__main__':
                 cw.writePushPop('push', p.arg1(), p.arg2())
             elif p.commandType() == 'C_POP':
                 cw.writePushPop('pop', p.arg1(), p.arg2())
-			elif p.commandtype() == 'C_LABEL':
-				cw.writeLavel(p.arg1())
-			elif p.commandType() == 'C_GOTO':
-				cw.write(p.arg1())
-			elif p.commandType() == 'C_IF':
-				cw.writeIf(p.arg1())
-			elif p.commandType() == 'C_FUNCTION':
-				cw.writeFunction(p.arg1(),p.arg2())
-			elif p.commandType() == 'C_RETURN':
-				cw.writeReturn()
-			elif p.commandType() == 'C_CALL':
-				cw.writeCall(p.arg1(),p.arg2())
+            elif p.commandType() == 'C_LABEL':
+                cw.writeLabel(p.arg1())
+            elif p.commandType() == 'C_GOTO':
+                cw.write(p.arg1())
+            elif p.commandType() == 'C_IF':
+                cw.writeIf(p.arg1())
+            elif p.commandType() == 'C_FUNCTION':
+                cw.writeFunction(p.arg1(),p.arg2())
+            elif p.commandType() == 'C_RETURN':
+                cw.writeReturn()
+            elif p.commandType() == 'C_CALL':
+                cw.writeCall(p.arg1(), p.arg2())
     cw.close()
