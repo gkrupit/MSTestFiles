@@ -40,9 +40,10 @@ class Parser(object):
 class CodeWriter(object):
     mem_segment = {'local': 'LCL', 'argument': 'ARG', 'this': 'THIS', 'that': 'THAT', 'pointer': 3, 'temp': 5}
     operations = {'add': '+', 'sub': '-', 'and': '&', 'or': '|', 'neg': '-',
-                  'not': '!', 'eq': 'EQ', 'lt': 'LT', 'gt': 'GT'}
+                  'not': '!', 'eq': 'JEQ', 'lt': 'JLT', 'gt': 'JGT'}
     nums = []
-    labelnum = 1
+    labelnum = 0
+    labelsDelivered = 0
 
     def __init__(self, directory, filename):
         self.outfile = open(os.path.join(directory, filename), 'w')
@@ -64,7 +65,7 @@ class CodeWriter(object):
             '@SP',
             'M=D'
         ])
-        self.writeCall('Sys.init', 0)
+        # self.writeCall('Sys.init', 0)
 
     def incrementSP(self):
         """ increments SP """
@@ -101,6 +102,7 @@ class CodeWriter(object):
             '@%s' %label,
             '0;JMP'
         ])
+        self.labelsDelivered += 1
 
     def writeIf(self, label):
         """  if the statement isn't 0 it will jump to a label  """
@@ -110,6 +112,7 @@ class CodeWriter(object):
             '@%s' %label,
             'D;JNE'
         ])
+        self.labelsDelivered += 1
 
     def writeCall(self, funcName, numArgs):
         """  Calling a function  """
@@ -120,8 +123,8 @@ class CodeWriter(object):
         self.write([
             '@%s' %returnLabel,
             'D=A',
-            '@SP'
-            'A=M'
+            '@SP',
+            'A=M',
             'D=M'
         ])
         self.incrementSP()
@@ -131,7 +134,7 @@ class CodeWriter(object):
                 '@%s' %segment,
                 'D=M',
                 '@SP',
-                'A=M'
+                'A=M',
                 'M=D'
             ])
         self.write([   #moves ARG and LCL to accomidate the offset
@@ -157,12 +160,12 @@ class CodeWriter(object):
         # set initial variables to 0
         for _ in range(int(nums)):
             self.write([
-                '@0',
-                'D=A',
                 '@SP',
                 'A=M',
-                'M=D'
+                'M=0'
             ])
+            self.incrementSP()
+            self.labelsDelivered += 1
 
     def writeArithmetic(self, command):
         if command in ('add', 'sub', 'and', 'or'):
@@ -198,15 +201,13 @@ class CodeWriter(object):
             # A < D => D < 0
             # A = D => D = 0
             self.write([
-                'A=M',
-                'D=A-M',
+                'D=M-D',
                 '@%s' %true,
                 'D;%s' %self.operations[command],
                 '@SP',
                 'A=M',
                 'M=0',
             ])
-            self.incrementSP()
             # stores 0 for false
             self.write([
                 '@%s' %false,
@@ -219,12 +220,13 @@ class CodeWriter(object):
                 'A=M',
                 'M=-1',
             ])
-            self.incrementSP()
             # skips the saving the truth value being stored
             # continues reading the vm
             self.write([
                 '(%s)' %false
             ])
+            self.labelsDelivered += 2
+        self.incrementSP()
 
     def writePushPop(self, command, segment, index):
         if command == 'push':
@@ -285,7 +287,7 @@ class CodeWriter(object):
             ])
 
     def close(self):
-        self.write(['@%s' %(1+self.lineCount), '0;JMP']) # infinite loop
+        self.write(['@%s' %(self.lineCount-self.labelsDelivered), '0;JMP']) # infinite loop
         self.outfile.close()
 
 if __name__ == '__main__':
@@ -319,7 +321,7 @@ if __name__ == '__main__':
             elif p.commandType() == 'C_LABEL':
                 cw.writeLabel(p.arg1())
             elif p.commandType() == 'C_GOTO':
-                cw.write(p.arg1())
+                cw.writeGoTo(p.arg1())
             elif p.commandType() == 'C_IF':
                 cw.writeIf(p.arg1())
             elif p.commandType() == 'C_FUNCTION':
