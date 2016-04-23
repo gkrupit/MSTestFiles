@@ -48,7 +48,10 @@ class CodeWriter(object):
     def __init__(self, directory, filename):
         self.outfile = open(os.path.join(directory, filename), 'w')
         self.lineCount = 0
-        self.startFile()
+        if filename is not 'NestedCall.asm':
+            self.startFile()
+            if os.path.exists(os.path.join(directory, 'Sys.vm')):
+                self.writeCall('Sys.init', 0)
 
     def setFileName(self, filename):
         self.fileName = os.path.basename(filename)[:-3]
@@ -60,12 +63,11 @@ class CodeWriter(object):
     def startFile(self):
         """ initializes stack pointer """
         self.write([
-            '@256',
+            '@256 // starting SP',
             'D=A',
             '@SP',
             'M=D'
         ])
-        # self.writeCall('Sys.init', 0)
 
     def incrementSP(self):
         """ increments SP """
@@ -91,18 +93,18 @@ class CodeWriter(object):
         ])
 
     def writeLabel(self, label):
-        """  just makes a label marker  """
+        """  makes a label marker  """
         self.write([
             '(%s)' %label
         ])
+        self.labelsDelivered += 1
 
     def writeGoTo(self, label):
         """  unconditional jumping to a specified label  """
         self.write([
-            '@%s' %label,
+            '@%s // GOTO' %label,
             '0;JMP'
         ])
-        self.labelsDelivered += 1
 
     def writeIf(self, label):
         """  if the statement isn't 0 it will jump to a label  """
@@ -112,32 +114,58 @@ class CodeWriter(object):
             '@%s' %label,
             'D;JNE'
         ])
-        self.labelsDelivered += 1
-
+    def writeCall2(self,functionName,numArgs):
+        """Prep for and call function"""
+        argOffset = int(numArgs) + 5
+        returnLabel = 'return%s%d' %(functionName,self.labelnum)
+        self.labelnum += 1
+        self.outfile.write('@%s\n' %returnLabel)
+        self.outfile.write('D=A\n')
+        self.outfile.write('@SP\n')
+        self.outfile.write('A=M\n')
+        self.outfile.write('M=D\n')
+        self.incrementSP()
+        for segment in ('LCL','ARG','THIS','THAT'):   # push base address of segments
+            self.outfile.write('@%s\n' %segment)
+            self.outfile.write('D=M\n')
+            self.outfile.write('@SP\n')
+            self.outfile.write('A=M\n')
+            self.outfile.write('M=D\n')
+            self.incrementSP()
+        self.outfile.write('@SP\n')           # reposition ARG
+        self.outfile.write('D=M\n')
+        self.outfile.write('@%d\n' %argOffset)
+        self.outfile.write('D=D-A\n')#SP-n-5
+        self.outfile.write('@ARG\n')
+        self.outfile.write('M=D\n')
+        self.outfile.write('@SP\n')              # reposition LCL
+        self.outfile.write('D=M\n')
+        self.outfile.write('@LCL\n')
+        self.outfile.write('M=D\n')
+        self.writeGoTo(functionName)
+        self.writeLabel(returnLabel)
     def writeCall(self, funcName, numArgs):
         """  Calling a function  """
         offset = int(numArgs) + 5    # how many args will it be taking? (needs at least 5)
-        returnLabel = 'return%s%d' %(funcName, self.labelnum)    #creates unique return label
+        returnLabel = 'return%s%d' %(funcName, self.labelnum)    # creates unique return label
         self.labelnum += 1
-        # sets up return label
+
         self.write([
-            '@%s' %returnLabel,
-            'D=A',
-            '@SP',
-            'A=M',
-            'D=M'
+            '@%s // function called' %returnLabel,
+            'D=A'
         ])
+        self.DtoSP()    # pushes return address (after function is called)
         self.incrementSP()
-        # sets up the base addresses of the segments
-        for segment in ('LCL', 'ARG', 'THIS', 'THAT'):
+
+        for segment in ('LCL', 'ARG', 'THIS', 'THAT'):    # pushes current segment addresses
             self.write([
                 '@%s' %segment,
-                'D=M',
-                '@SP',
-                'A=M',
-                'M=D'
+                'D=M'
             ])
-        self.write([   #moves ARG and LCL to accomidate the offset
+            self.DtoSP()
+            self.incrementSP()
+
+        self.write([   # moves ARG and LCL to accommodate the offset
             '@SP',
             'D=M',
             '@%d' %offset,
@@ -150,22 +178,63 @@ class CodeWriter(object):
             'M=D'
         ])
         self.writeGoTo(funcName)
-        self.writeLabel(returnLabel)
+        self.writeLabel(returnLabel)    # return address label
 
-    def writeReturn(self): # super long....
-        pass
+    def writeReturn(self):
+        self.write([
+            '@LCL // return called',
+            'D=M',
+            '@R13',
+            'M=D',
+            'D=M',
+            '@5',
+            'D=D-A',
+            'A=D',
+            'D=M',
+            '@R14',
+            'M=D'
+        ])
+        self.decrementSP()
+        self.write([
+            'D=M',
+            '@ARG',
+            'A=M',
+            'M=D',
+            '@ARG',
+            'D=M+1',
+            '@SP',
+            'M=D',
+            '@R13',
+            'A=M-1',
+            'D=M',
+            '@THAT',
+            'M=D',
+        ])
+        for i, segment in enumerate(('THIS', 'ARG', 'LCL'), 2):
+            self.write([
+                '@R13',
+                'D=M',
+                '@%s' %i,
+                'A=D-A',
+                'D=M',
+                '@%s' %segment,
+                'M=D'
+            ])
+        self.write([
+            '@R14',
+            'A=M',
+            '0;JMP'
+        ])
 
     def writeFunction(self, funcName, nums):
         self.writeLabel(funcName)
-        # set initial variables to 0
-        for _ in range(int(nums)):
+        for _ in range(int(nums)):    # set initial variables to 0
             self.write([
                 '@SP',
                 'A=M',
                 'M=0'
             ])
             self.incrementSP()
-            self.labelsDelivered += 1
 
     def writeArithmetic(self, command):
         if command in ('add', 'sub', 'and', 'or'):
@@ -264,7 +333,7 @@ class CodeWriter(object):
                 else:
                     write_index = self.mem_segment[segment] + int(index)
                 self.write([
-                    '@%s' %write_index,
+                    '@%s // pop called' %write_index,
                     'D=A',
                     '@13',
                     'M=D'
@@ -287,7 +356,7 @@ class CodeWriter(object):
             ])
 
     def close(self):
-        self.write(['@%s' %(self.lineCount-self.labelsDelivered), '0;JMP']) # infinite loop
+        # self.write(['@%s' %(self.lineCount-self.labelsDelivered), '0;JMP']) # infinite loop
         self.outfile.close()
 
 if __name__ == '__main__':
