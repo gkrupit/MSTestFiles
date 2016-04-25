@@ -114,36 +114,7 @@ class CodeWriter(object):
             '@%s' %label,
             'D;JNE'
         ])
-    def writeCall2(self,functionName,numArgs):
-        """Prep for and call function"""
-        argOffset = int(numArgs) + 5
-        returnLabel = 'return%s%d' %(functionName,self.labelnum)
-        self.labelnum += 1
-        self.outfile.write('@%s\n' %returnLabel)
-        self.outfile.write('D=A\n')
-        self.outfile.write('@SP\n')
-        self.outfile.write('A=M\n')
-        self.outfile.write('M=D\n')
-        self.incrementSP()
-        for segment in ('LCL','ARG','THIS','THAT'):   # push base address of segments
-            self.outfile.write('@%s\n' %segment)
-            self.outfile.write('D=M\n')
-            self.outfile.write('@SP\n')
-            self.outfile.write('A=M\n')
-            self.outfile.write('M=D\n')
-            self.incrementSP()
-        self.outfile.write('@SP\n')           # reposition ARG
-        self.outfile.write('D=M\n')
-        self.outfile.write('@%d\n' %argOffset)
-        self.outfile.write('D=D-A\n')#SP-n-5
-        self.outfile.write('@ARG\n')
-        self.outfile.write('M=D\n')
-        self.outfile.write('@SP\n')              # reposition LCL
-        self.outfile.write('D=M\n')
-        self.outfile.write('@LCL\n')
-        self.outfile.write('M=D\n')
-        self.writeGoTo(functionName)
-        self.writeLabel(returnLabel)
+
     def writeCall(self, funcName, numArgs):
         """  Calling a function  """
         offset = int(numArgs) + 5    # how many args will it be taking? (needs at least 5)
