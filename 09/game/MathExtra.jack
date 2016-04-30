@@ -1,0 +1,18 @@
+//MathExtra.jack
+
+/*
+implements: 
+  -mod
+*/
+
+class MathExtra {
+
+	function int mod(int first, int second) {
+		while (((first - second) > 0 | (first - second) = 0)) {
+			let first = first - second;
+		}
+
+		return first;
+	}
+
+}
