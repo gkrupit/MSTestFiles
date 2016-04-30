@@ -1,0 +1,54 @@
+class Line {
+
+    // Location on the screen
+    field int x1, y1, x2, y2;
+
+    /** Constructs a new Line with a given origin. */
+    constructor Line new() {
+        let x1 = 241;
+        let y1 = 0;
+        let x2 = 271;
+        let y2 = 0;
+
+        do draw();
+
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the line on the screen. */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawLine(x1, y1, x2, y2);
+        return;
+    }
+
+    // /** Erases the line from the screen. */
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawLine(x1, y1, x2, y2);
+        return;
+    }
+
+    /** Moves down by 2 pixels. */
+    method void moveDown() {
+        if (y1 < 252) {
+            do Screen.setColor(false);
+            do Screen.drawLine(x1, y1, x2, y2);
+            let y1 = y1 + 4;
+            let y2 = y2 + 4;
+            do Screen.setColor(true);
+            do Screen.drawLine(x1, y1, x2, y2);
+        }
+        else {
+            do Screen.setColor(false);
+            do Screen.drawLine(x1, y1, x2, y2);
+        }
+        return;
+    }
+}

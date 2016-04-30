@@ -1,0 +1,55 @@
+class Circle {
+
+    // Location on the screen
+    field int x, y;
+
+    // The radius of the circle
+    field int radius;
+
+    /** Constructs a new Circle with a given origin and radius. */
+    constructor Circle new() {
+        let x = 256;
+        let y = 15;
+        let radius = 15;
+
+        do draw();
+
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the circle on the screen. */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawCircle(x, y, radius);
+        return;
+    }
+
+    // /** Erases the circle from the screen. */
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawCircle(x, y, radius);
+        return;
+    }
+
+    /** Moves down by 2 pixels. */
+    method void moveDown() {
+        if ((y + radius) < 254) {
+            do Screen.setColor(false);
+            do Screen.drawCircle(x, y, radius);
+            let y = y + 2;
+            do Screen.setColor(true);
+            do Screen.drawCircle(x, y, radius);
+        }
+        else {
+            do Screen.setColor(false);
+            do Screen.drawCircle(x, y, radius);
+        }
+        return;
+    }
+}
