@@ -1,0 +1,96 @@
+//ShapeGame.jack
+
+/**
+ShapeGame: Random Shape appears on at the top of the screen
+and moves down at a constant rate.  The player must correctly
+type the name of the shape before the shape reaches the bottom 
+of the screen.
+*/
+
+class ShapeGame {
+
+	static int SQUARE;
+	static int CIRCLE;
+	static int LINE;
+
+	field char key;
+
+	field Random random;
+
+	field int currentShape;
+
+	field int numberOfShapes;
+
+	field Square square;
+	field Cirlce circle;
+	field Line line;
+
+	constructor ShapeGame new() {
+		let SQUARE = 0;
+		let CIRCLE = 1;
+		let LINE = 2;
+
+		let key = Keyboard.readChar();	
+
+		let random = Random.new(key);
+
+		do setNextShape();
+
+		do generateShape();
+
+		return this;
+	}
+
+	method void setNextShape() {
+		var int rand;
+		let rand = random.getRandom();
+		let currentShape = MathExtra.mod(rand, numberOfShapes);
+		return;
+	}
+
+	method void clearShape() {
+		if (currentShape = SQUARE) {
+			do square.erase();
+		}
+		if (currentShape = LINE) {
+			do line.erase();
+		}
+		if (currentShape = CIRCLE) {
+			do circle.erase();
+		}
+		return;
+	}
+
+	method void generateShape() {
+		do setNextShape();
+
+		if (currentShape = SQUARE) {
+			let square = Square.new();
+		}
+		if (currentShape = CIRCLE) {
+			let circle = Circle.new();
+		}
+		if (currentShape = LINE) {
+			let line = Line.new();
+		}
+		return;
+	}
+
+
+
+	method void run() { return; }
+	method void dispose() { return; }
+}
+/*
+	method moveDown() {
+		if (currentShape == 0) {
+			square.moveDown();
+		}
+		if (currentShape == 1) {
+			rectangle.moveDown();
+		}
+		if (currentShape == 2) {
+			line.moveDown();
+		}
+	}
+	*/

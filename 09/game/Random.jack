@@ -1,0 +1,22 @@
+//Random.jack
+
+/*
+Input (constructor): seed (int)
+getRandInt(): returns random integer
+*/
+
+class Random {
+
+	static int MAX;
+	field int seed;
+
+	constructor Random new(int _seed) {
+		let MAX = 1000;
+		let seed = _seed;
+		return this;
+	}
+
+	method int getRandom() {
+		return 0;
+	}
+}
