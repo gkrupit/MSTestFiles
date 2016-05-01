@@ -39,6 +39,8 @@ class Circle {
 
     /** Moves down by 2 pixels. */
     method void moveDown() {
+        var boolean bottom;
+        let bottom = false;
         if ((y + radius) < 254) {
             do Screen.setColor(false);
             do Screen.drawCircle(x, y, radius);
@@ -47,9 +49,8 @@ class Circle {
             do Screen.drawCircle(x, y, radius);
         }
         else {
-            do Screen.setColor(false);
-            do Screen.drawCircle(x, y, radius);
+            let bottom = true;
         }
-        return;
+        return bottom;
     }
 }
