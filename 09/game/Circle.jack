@@ -38,7 +38,7 @@ class Circle {
     }
 
     /** Moves down by 2 pixels. */
-    method void moveDown() {
+    method boolean moveDown() {
         var boolean bottom;
         let bottom = false;
         if ((y + radius) < 254) {

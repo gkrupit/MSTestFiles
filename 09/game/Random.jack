@@ -8,15 +8,18 @@ getRandInt(): returns random integer
 class Random {
 
 	static int MAX;
-	field int seed;
+	field int currentSeed;
 
-	constructor Random new(int _seed) {
-		let MAX = 1000;
-		let seed = _seed;
+
+	constructor Random new(int seed) {
+		let currentSeed = seed;
 		return this;
 	}
 
 	method int getRandom() {
-		return 0;
+		var int random;
+		let random = MathExtra.mod(((4 * currentSeed) + 1),11);
+		let currentSeed = random;
+		return random;
 	}
 }

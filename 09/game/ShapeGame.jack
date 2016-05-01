@@ -21,32 +21,37 @@ class ShapeGame {
 
 	field int currentShape;
 
+	field boolean correctKey;
+
 	field Square square;
 	field Circle circle;
 	field Line line;
 
+	field String currentString;
+
 	field boolean bottom;
 
-	constructor ShapeGame new() {
+	constructor ShapeGame new() {	
+
 		let SQUARE = 0;
 		let CIRCLE = 1;
 		let LINE = 2;
 
-		let round = 3;
+		let round = 7;
 
 		let bottom = false;
+		let correctKey = false;
 
-		//let key = Keyboard.readChar();	
-
-		//let random = Random.new(key);
+		let key = Keyboard.readChar();	
+		let random = Random.new(key);
 
 		return this;
 	}
 
 	method void setNextShape() {
 		var int rand;
-		//let rand = random.getRandom();
-		let currentShape = MathExtra.mod(11, 3);
+		let rand = random.getRandom();
+		let currentShape = MathExtra.mod(rand, 3);
 		return;
 	}
 
@@ -84,6 +89,26 @@ class ShapeGame {
 
 
 
+	method boolean checkKey() {
+		if (currentShape = SQUARE) {
+			if (key = 83) {
+				return true;
+			}
+		}
+		if (currentShape = LINE) {
+			if (key = 76) {
+				return true;
+			}
+		}
+		if (currentShape = CIRCLE) {
+			if (key = 67) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	method void run() { 
 		var boolean exit;
 		let exit = false;
@@ -91,7 +116,7 @@ class ShapeGame {
 		while (~exit & (round > 0)) {	
 			do Output.printInt(round);
 			do generateShape();
-			while (~bottom) {
+			while (~bottom & ~correctKey) {
 				if (currentShape = SQUARE) {
 					let bottom = square.moveDown();
 				}
@@ -101,13 +126,23 @@ class ShapeGame {
 				if (currentShape = CIRCLE) {
 					let bottom = circle.moveDown();
 				}
-				do Sys.wait(20);
-				let round = round - 1;
+				let key = Keyboard.keyPressed();
+				if (~(key = 0)) {
+					let correctKey = checkKey();
+					if (correctKey) {
+						do clearShape();
+					}
+				}
+
+				do Sys.wait(100);
 			}
 			if (bottom) {
+				let exit = true;
 				do clearShape();
 			}
 			let round = round - 1;
+			let bottom = false;
+			let correctKey = false;
 
 		}
 		return; 
