@@ -13,30 +13,37 @@ class ShapeGame {
 	static int CIRCLE;
 	static int LINE;
 
+	field int round;
+
 	field char key;
 
 	field Random random;
 
 	field int currentShape;
 
-	field int numberOfShapes;
+	field boolean correctKey;
 
 	field Square square;
-	field Cirlce circle;
+	field Circle circle;
 	field Line line;
 
-	constructor ShapeGame new() {
+	field String currentString;
+
+	field boolean bottom;
+
+	constructor ShapeGame new() {	
+
 		let SQUARE = 0;
 		let CIRCLE = 1;
 		let LINE = 2;
 
+		let round = 7;
+
+		let bottom = false;
+		let correctKey = false;
+
 		let key = Keyboard.readChar();	
-
 		let random = Random.new(key);
-
-		do setNextShape();
-
-		do generateShape();
 
 		return this;
 	}
@@ -44,7 +51,11 @@ class ShapeGame {
 	method void setNextShape() {
 		var int rand;
 		let rand = random.getRandom();
-		let currentShape = MathExtra.mod(rand, numberOfShapes);
+		let currentShape = MathExtra.mod(rand, 3);
+		return;
+	}
+
+	method void endGame() {
 		return;
 	}
 
@@ -78,8 +89,68 @@ class ShapeGame {
 
 
 
-	method void run() { return; }
-	method void dispose() { return; }
+	method boolean checkKey() {
+		if (currentShape = SQUARE) {
+			if (key = 83) {
+				return true;
+			}
+		}
+		if (currentShape = LINE) {
+			if (key = 76) {
+				return true;
+			}
+		}
+		if (currentShape = CIRCLE) {
+			if (key = 67) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	method void run() { 
+		var boolean exit;
+		let exit = false;
+
+		while (~exit & (round > 0)) {	
+			do Output.printInt(round);
+			do generateShape();
+			while (~bottom & ~correctKey) {
+				if (currentShape = SQUARE) {
+					let bottom = square.moveDown();
+				}
+				if (currentShape = LINE) {
+					let bottom = line.moveDown();
+				}
+				if (currentShape = CIRCLE) {
+					let bottom = circle.moveDown();
+				}
+				let key = Keyboard.keyPressed();
+				if (~(key = 0)) {
+					let correctKey = checkKey();
+					if (correctKey) {
+						do clearShape();
+					}
+				}
+
+				do Sys.wait(100);
+			}
+			if (bottom) {
+				let exit = true;
+				do clearShape();
+			}
+			let round = round - 1;
+			let bottom = false;
+			let correctKey = false;
+
+		}
+		return; 
+	}
+
+	method void dispose() { 
+		return; 
+	}
 }
 /*
 	method moveDown() {

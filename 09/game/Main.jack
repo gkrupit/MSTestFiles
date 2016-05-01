@@ -9,6 +9,7 @@
 class Main {
 
     /** Initializes a new game and starts it. */    
+
     function void main() {
         var ShapeGame game;
 
@@ -18,4 +19,6 @@ class Main {
 
         return;
     }
+
+
 }

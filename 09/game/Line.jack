@@ -36,7 +36,9 @@ class Line {
     }
 
     /** Moves down by 2 pixels. */
-    method void moveDown() {
+    method boolean moveDown() {
+        var boolean bottom;
+        let bottom = false;
         if (y1 < 252) {
             do Screen.setColor(false);
             do Screen.drawLine(x1, y1, x2, y2);
@@ -46,9 +48,8 @@ class Line {
             do Screen.drawLine(x1, y1, x2, y2);
         }
         else {
-            do Screen.setColor(false);
-            do Screen.drawLine(x1, y1, x2, y2);
+            let bottom = true;
         }
-        return;
+        return bottom;
     }
 }
