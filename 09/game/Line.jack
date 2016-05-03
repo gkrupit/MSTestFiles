@@ -42,8 +42,8 @@ class Line {
         if (y1 < 252) {
             do Screen.setColor(false);
             do Screen.drawLine(x1, y1, x2, y2);
-            let y1 = y1 + 4;
-            let y2 = y2 + 4;
+            let y1 = y1 + 3;
+            let y2 = y2 + 3;
             do Screen.setColor(true);
             do Screen.drawLine(x1, y1, x2, y2);
         }
@@ -52,4 +52,5 @@ class Line {
         }
         return bottom;
     }
+
 }

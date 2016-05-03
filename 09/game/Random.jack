@@ -2,12 +2,12 @@
 
 /*
 Input (constructor): seed (int)
-getRandInt(): returns random integer
+
+getRandom(): returns random integer
 */
 
 class Random {
 
-	static int MAX;
 	field int currentSeed;
 
 
@@ -18,8 +18,13 @@ class Random {
 
 	method int getRandom() {
 		var int random;
-		let random = MathExtra.mod(((4 * currentSeed) + 1),11);
-		let currentSeed = random;
+		let random = MathExtra.mod(((7 * currentSeed) + 1),11);
+		let currentSeed = random; //set seed for next getRandom() call
 		return random;
 	}
+
+	method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
 }

@@ -1,25 +1,40 @@
-//ShapeGame.jack
+/**
+ShapeGame.jack
+
+Authors: Eleni , Greg Krupit
+
 
 /**
 ShapeGame: Random Shape appears on at the top of the screen
 and moves down at a constant rate.  The player must correctly
-type the name of the shape before the shape reaches the bottom 
+type the first letter of the shape before the shape reaches the bottom 
 of the screen.
 */
 
 class ShapeGame {
 
+	//constants
 	static int SQUARE;
 	static int CIRCLE;
 	static int LINE;
 
+	//how many shapes left in game
 	field int round;
 
+	field int score;
+
+	//stores last keypress
 	field char key;
+
+	//stores prevShape
+	//used to compare previous shape to current shape
+	field int prevShape;
 
 	field Random random;
 
 	field int currentShape;
+
+	field int difficulty;
 
 	field boolean correctKey;
 
@@ -27,7 +42,7 @@ class ShapeGame {
 	field Circle circle;
 	field Line line;
 
-	field String currentString;
+	field String startMsg;
 
 	field boolean bottom;
 
@@ -37,28 +52,60 @@ class ShapeGame {
 		let CIRCLE = 1;
 		let LINE = 2;
 
-		let round = 7;
+		let round = 15;
+		let score = 0;
 
 		let bottom = false;
 		let correctKey = false;
 
+
+		do Output.printString("Enter Difficulty");
+		do Output.println();
+		do Output.printString("1 = hard");
+		do Output.println();
+		do Output.printString("2 = moderate");
+		do Output.println();
+		do Output.printString("3 = easiest");
+
+
+
+		let key = Keyboard.readChar();
+
+		do Output.printInt(key);
+		do Screen.clearScreen();
+		do Output.moveCursor(0,0);
+
+		let difficulty = (key - 48) * 10;
+
+		let startMsg = "Press any key to begin...";
+		do Output.printString(startMsg);
+
+		//Initialize random sequence of shapes
+		//Start game
 		let key = Keyboard.readChar();	
+		do Screen.clearScreen();
 		let random = Random.new(key);
+
+		let currentShape = 4;
 
 		return this;
 	}
 
+
+	//Queues next shape
 	method void setNextShape() {
 		var int rand;
+		var int prevShape;
+		let prevShape = currentShape;
 		let rand = random.getRandom();
 		let currentShape = MathExtra.mod(rand, 3);
+		if (currentShape = prevShape) {
+			let currentShape = MathExtra.mod((currentShape + 1), 3);
+		}
 		return;
 	}
 
-	method void endGame() {
-		return;
-	}
-
+	//Clear shape currently drawn on screen
 	method void clearShape() {
 		if (currentShape = SQUARE) {
 			do square.erase();
@@ -72,6 +119,7 @@ class ShapeGame {
 		return;
 	}
 
+	//Draw next shape on screen
 	method void generateShape() {
 		do setNextShape();
 
@@ -88,7 +136,7 @@ class ShapeGame {
 	}
 
 
-
+	//check if user's keypress matches current shape on screen
 	method boolean checkKey() {
 		if (currentShape = SQUARE) {
 			if (key = 83) {
@@ -109,12 +157,13 @@ class ShapeGame {
 		return false;
 	}
 
+
+	//Run game
 	method void run() { 
 		var boolean exit;
 		let exit = false;
 
 		while (~exit & (round > 0)) {	
-			do Output.printInt(round);
 			do generateShape();
 			while (~bottom & ~correctKey) {
 				if (currentShape = SQUARE) {
@@ -134,34 +183,34 @@ class ShapeGame {
 					}
 				}
 
-				do Sys.wait(100);
+				do Sys.wait(difficulty);
 			}
 			if (bottom) {
 				let exit = true;
 				do clearShape();
 			}
+
 			let round = round - 1;
+			let score = score + 1;
+			if (~bottom) {
+				do Screen.clearScreen();
+				do Output.moveCursor(0,0);
+				do Output.printString("Score: ");
+				do Output.printInt(score);					
+			}
+
 			let bottom = false;
 			let correctKey = false;
-
 		}
 		return; 
 	}
 
-	method void dispose() { 
+	method void dispose() {
+		do square.dispose();
+		do line.dispose();
+		do circle.dispose(); 
+		do random.dispose();
+		do Memory.deAlloc(this);
 		return; 
 	}
 }
-/*
-	method moveDown() {
-		if (currentShape == 0) {
-			square.moveDown();
-		}
-		if (currentShape == 1) {
-			rectangle.moveDown();
-		}
-		if (currentShape == 2) {
-			line.moveDown();
-		}
-	}
-	*/
