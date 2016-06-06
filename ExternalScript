@@ -1,0 +1,4 @@
+configOptions = 
+    EXTRACT workloadName
+    FROM "/users/t-grkrup/config.txt"
+    USING DefaultTextExtractor();
